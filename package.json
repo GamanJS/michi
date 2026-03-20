@@ -1,6 +1,6 @@
 {
   "name": "@gaman/michi",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Radix Tree Router designed as the core routing engine for GamanJS",
   "author": {
     "name": "Angga7Togk",

@@ -1,20 +1,20 @@
 export interface MichiResult<T> {
-  handle: T;
+  data: T;
   params: Record<string, any>;
 }
 
-export interface ChunkRoute<T> {
+export interface ParamRoute<T> {
   name: string;
-  handle: T | null;
+  data: T | null;
   next: Route<T> | null;
 }
 
 export interface Route<T> {
   path: string;
-  handle: T | null;
-  wildcardHandle: T | null;
-  childrens: Record<number, Route<T>> | null;
-  chunks: ChunkRoute<T> | null;
+  data: T | null;
+  fallbackData: T | null;
+  statics: Record<number, Route<T>> | null;
+  params: ParamRoute<T> | null;
 }
 
 // Normalize Value (String to Native)
@@ -36,10 +36,10 @@ export class Michi<T> {
   private createRoute(path: string): Route<T> {
     return {
       path,
-      handle: null,
-      wildcardHandle: null,
-      childrens: null,
-      chunks: null,
+      data: null,
+      fallbackData: null,
+      statics: null,
+      params: null,
     };
   }
 
@@ -105,32 +105,32 @@ export class Michi<T> {
       // ? handle dinamic / params segments
       if (part[0] === ":") {
         const paramName = part.slice(1); // ? ambil string setelah index 0
-        if (!route.chunks) {
-          route.chunks = { name: paramName, handle: null, next: null };
+        if (!route.params) {
+          route.params = { name: paramName, data: null, next: null };
         }
 
         if (i === totalIndex && !isWildcard) {
-          route.chunks.handle = handle;
+          route.params.data = handle;
           return handle;
         }
 
-        if (!route.chunks.next) route.chunks.next = this.createRoute("/");
-        route = route.chunks.next;
+        if (!route.params.next) route.params.next = this.createRoute("/");
+        route = route.params.next;
         continue;
       }
 
       // ? Handle Static Segment
-      if (!route.childrens) route.childrens = {};
+      if (!route.statics) route.statics = {};
       const charCode = part.charCodeAt(0);
 
-      if (!route.childrens[charCode]) {
-        route.childrens[charCode] = this.createRoute(part);
+      if (!route.statics[charCode]) {
+        route.statics[charCode] = this.createRoute(part);
       }
-      route = route.childrens[charCode];
+      route = route.statics[charCode];
     }
 
-    if (isWildcard) route.wildcardHandle = handle;
-    else route.handle = handle;
+    if (isWildcard) route.fallbackData = handle;
+    else route.data = handle;
 
     return handle;
   }
@@ -140,14 +140,14 @@ export class Michi<T> {
     if (!root) return null;
 
     if (path === "/" || path === "") {
-      return root.handle ? { handle: root.handle, params: {} } : null;
+      return root.data ? { data: root.data, params: {} } : null;
     }
 
     return this.match(path, path.length, root, 0);
   }
 
   private match(
-    url: string,
+    pathname: string,
     len: number,
     root: Route<T>,
     start: number,
@@ -156,54 +156,54 @@ export class Michi<T> {
     const pathLen = path.length;
 
     if (path !== "/") {
-      if (url.substring(start, start + pathLen) !== path) return null;
+      if (pathname.substring(start, start + pathLen) !== path) return null;
       start += pathLen;
     }
 
-    if (url[start] === "/") start++;
+    if (pathname[start] === "/") start++;
 
     if (start >= len) {
-      if (root.handle) return { handle: root.handle, params: {} };
-      if (root.wildcardHandle)
-        return { handle: root.wildcardHandle, params: { "*": "" } };
+      if (root.data) return { data: root.data, params: {} };
+      if (root.fallbackData)
+        return { data: root.fallbackData, params: { "*": "" } };
       return null;
     }
 
     // Static Priority
-    if (root.childrens) {
-      const nextNode = root.childrens[url.charCodeAt(start)];
+    if (root.statics) {
+      const nextNode = root.statics[pathname.charCodeAt(start)];
       if (nextNode) {
-        const res = this.match(url, len, nextNode, start);
+        const res = this.match(pathname, len, nextNode, start);
         if (res) return res;
       }
     }
 
     // Dynamic Params
-    if (root.chunks) {
-      const nextSlash = url.indexOf("/", start);
+    if (root.params) {
+      const nextSlash = pathname.indexOf("/", start);
       const isLast = nextSlash === -1 || nextSlash >= len;
 
       if (isLast) {
-        if (root.chunks.handle) {
+        if (root.params.data) {
           return {
-            handle: root.chunks.handle,
-            params: { [root.chunks.name]: nv(url.substring(start, len)) },
+            data: root.params.data,
+            params: { [root.params.name]: nv(pathname.substring(start, len)) },
           };
         }
-      } else if (root.chunks.next) {
-        const res = this.match(url, len, root.chunks.next, nextSlash);
+      } else if (root.params.next) {
+        const res = this.match(pathname, len, root.params.next, nextSlash);
         if (res) {
-          res.params[root.chunks.name] = nv(url.substring(start, nextSlash));
+          res.params[root.params.name] = nv(pathname.substring(start, nextSlash));
           return res;
         }
       }
     }
 
     // Wildcard Fallback
-    if (root.wildcardHandle) {
+    if (root.fallbackData) {
       return {
-        handle: root.wildcardHandle,
-        params: { "*": nv(url.substring(start, len)) },
+        data: root.fallbackData,
+        params: { "*": nv(pathname.substring(start, len)) },
       };
     }
 
