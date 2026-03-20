@@ -1,0 +1,13 @@
+{
+  "name": "michi",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsup": "^8.5.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
