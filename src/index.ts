@@ -19,9 +19,9 @@ export interface Route<T> {
 
 // Normalize Value (String to Native)
 const nv = (v: any) => {
-  if (typeof v !== 'string') return v;
-  if (v === 'true') return true;
-  if (v === 'false') return false;
+  if (typeof v !== "string") return v;
+  if (v === "true") return true;
+  if (v === "false") return false;
   const num = Number(v);
   return isNaN(num) ? v : num;
 };
@@ -43,21 +43,31 @@ export class Michi<T> {
     };
   }
 
-  add(method: string, path: string, handle: T): T {
-    if (!path || path === "") path = "/";
-    if (path[0] !== "/") path = "/" + path;
+  add(
+    method: string,
+    path: string,
+    handle: T,
+    ops?: {
+      // @default false
+      useOriginalPath?: boolean;
+    },
+  ): T {
+    if (!ops?.useOriginalPath) {
+      if (!path || path === "") path = "/";
+      if (path[0] !== "/") path = "/" + path;
+    }
     method = method.toUpperCase();
 
     // ? handle optional parameter
-    if (path.includes('?')) {
+    if (path.includes("?")) {
       const originalPath = path.replace(/\?/g, "");
       const optionalParts = path.match(Michi.regex.optionalParams) || [];
-      
+
       /**
        * ? add versi lengkap
        * ? misal: GET /profile/:id? jadi GET /profile
        */
-      this.add(method, originalPath, handle); //? loop add
+      this.add(method, originalPath, handle, ops); //? loop add
 
       /**
        * ? add masing masing optional param tanpa /profile (original path)
@@ -70,7 +80,7 @@ export class Michi<T> {
        */
       for (const part of optionalParts) {
         const shorterPath = path.replace(part, "");
-        this.add(method, shorterPath, handle); //? lloop add
+        this.add(method, shorterPath, handle, ops); //? lloop add
       }
       return handle;
     }
@@ -80,7 +90,7 @@ export class Michi<T> {
 
     if (!this.roots[method]) this.roots[method] = this.createRoute("/");
     let route = this.roots[method];
-    
+
     /**
      * ? pecah jadi segments / array
      * ? contoh: /profile/21515/:id
@@ -125,18 +135,23 @@ export class Michi<T> {
     return handle;
   }
 
-  find(method: string, url: string): MichiResult<T> | null {
+  find(method: string, path: string): MichiResult<T> | null {
     const root = this.roots[method.toUpperCase()];
     if (!root) return null;
 
-    if (url === "/" || url === "") {
+    if (path === "/" || path === "") {
       return root.handle ? { handle: root.handle, params: {} } : null;
     }
 
-    return this.match(url, url.length, root, 0);
+    return this.match(path, path.length, root, 0);
   }
 
-  private match(url: string, len: number, root: Route<T>, start: number): MichiResult<T> | null {
+  private match(
+    url: string,
+    len: number,
+    root: Route<T>,
+    start: number,
+  ): MichiResult<T> | null {
     const path = root.path;
     const pathLen = path.length;
 
@@ -149,7 +164,8 @@ export class Michi<T> {
 
     if (start >= len) {
       if (root.handle) return { handle: root.handle, params: {} };
-      if (root.wildcardHandle) return { handle: root.wildcardHandle, params: { "*": "" } };
+      if (root.wildcardHandle)
+        return { handle: root.wildcardHandle, params: { "*": "" } };
       return null;
     }
 

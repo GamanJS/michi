@@ -16,6 +16,9 @@ r.add("PUT", "/users/asdada", "/users/asdada");
 r.add("PUT", "/users/asdada/asdada", "/users/asdada/asdada");
 r.add("PUT", "/users/param/:name", "/users/param/:name");
 
+r.add("IPC", "0.0.0.0:3431", "0.0.0.0:3431", { useOriginalPath: true });
+r.add("IPC", "/tmp/gaman.sock", "/tmp/gaman.sock", { useOriginalPath: true });
+
 describe("Michi", () => {
   it("root", () => {
     expect(r.find("GET", "/")).toEqual({
@@ -112,6 +115,20 @@ describe("Michi", () => {
       params: {
         name: "angga",
       },
+    });
+  });
+
+  it("ipc tcp", () => {
+    expect(r.find("IPC", "0.0.0.0:3431")).toEqual({
+      handle: "0.0.0.0:3431",
+      params: {},
+    });
+  });
+
+  it("ipc router", () => {
+    expect(r.find("IPC", "/tmp/gaman.sock")).toEqual({
+      handle: "/tmp/gaman.sock",
+      params: {},
     });
   });
 });
