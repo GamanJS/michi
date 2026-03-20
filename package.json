@@ -1,13 +1,40 @@
 {
-  "name": "michi",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
+  "name": "@gaman/michi",
+  "version": "0.0.1",
+  "description": "Radix Tree Router designed as the core routing engine for GamanJS",
+  "author": {
+    "name": "Angga7Togk",
+    "url": "https://github.com/angga7togk"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./dist/bun/index.js",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "keywords": [
+    "gamanjs",
+    "michi",
+    "router",
+    "radix",
+    "tree"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GamanJS/michi.git"
+  },
+  "bugs": "https://github.com/GamanJS/michi/issues",
+  "license": "MIT",
+  "homepage": "https://github.com/GamanJS/michi",
+  "scripts": {
+    "release": "bun build.ts && bun test && npm publish --access public"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.5.1"
-  },
-  "peerDependencies": {
+    "tsup": "^8.5.1",
     "typescript": "^5"
   }
 }
