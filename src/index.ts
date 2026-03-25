@@ -13,7 +13,7 @@ export interface Route<T> {
   path: string;
   data: T | null;
   fallbackData: T | null;
-  statics: Record<number, Route<T>> | null;
+  statics: Record<number, Route<T>[]> | null;
   params: ParamRoute<T> | null;
 }
 
@@ -124,9 +124,16 @@ export class Michi<T> {
       const charCode = part.charCodeAt(0);
 
       if (!route.statics[charCode]) {
-        route.statics[charCode] = this.createRoute(part);
+        route.statics[charCode] = [];
       }
-      route = route.statics[charCode];
+
+      // ? 
+      let nextRoute = route.statics[charCode].find((r) => r.path === part);
+      if (!nextRoute) {
+        nextRoute = this.createRoute(part);
+        route.statics[charCode].push(nextRoute);
+      }
+      route = nextRoute;
     }
 
     if (isWildcard) route.fallbackData = handle;
@@ -171,10 +178,12 @@ export class Michi<T> {
 
     // Static Priority
     if (root.statics) {
-      const nextNode = root.statics[pathname.charCodeAt(start)];
-      if (nextNode) {
-        const res = this.match(pathname, len, nextNode, start);
-        if (res) return res;
+      const nextNodes = root.statics[pathname.charCodeAt(start)];
+      if (nextNodes) {
+        for (let i = 0; i < nextNodes.length; i++) {
+          const res = this.match(pathname, len, nextNodes[i], start);
+          if (res) return res;
+        }
       }
     }
 
